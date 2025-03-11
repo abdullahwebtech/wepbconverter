@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image to WebP Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/11384/11384113.png">
+
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes slideUp {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes lineFlow {
+            0% { left: -20%; }
+            100% { left: 100%; }
+        }
+        @keyframes linePulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.9; }
+        }
+        .pulse { animation: pulse 2s infinite; }
+        .container {
+            max-width: 90%;
+            margin: 20px auto;
+        }
+        body {
+            background: linear-gradient(135deg, #6B46C1, #D53F8C);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        #dropzone {
+            background: rgba(224, 231, 255, 0.8);
+            border: 2px dashed #A3BFFA;
+            transition: all 0.3s ease;
+        }
+        #dropzone:hover {
+            background: rgba(203, 213, 225, 0.9);
+            border-color: #7B8DD2;
+        }
+        #fileList {
+            background: rgba(243, 244, 246, 0.8);
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+        .file-progress {
+            background: #E5E7EB;
+            border-radius: 9999px;
+            height: 6px;
+            margin-top: 4px;
+            width: 100%;
+        }
+        .file-progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #4C51BF, #D53F8C);
+            border-radius: 9999px;
+            transition: width 0.1s linear;
+        }
+        .text-gradient {
+            background: linear-gradient(90deg, #6B46C1, #D53F8C);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .success-message {
+            color: #10B981;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .error-message {
+            color: #EF4444;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .action-btn i {
+            font-size: 1rem;
+        }
+        .btn-converted {
+            background-color: #10B981;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #EF4444;
+            color: white;
+        }
+        .action-btn:hover {
+            filter: brightness(1.1);
+        }
+        #zipDownload {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        #zipDownload a {
+            background-color: #6B46C1;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        #zipDownload a:hover {
+            background-color: #553C9A;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+        .file-details {
+            flex: 1;
+        }
+        .file-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        #counter {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4B5563;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, rgba(107, 70, 193, 0.1), rgba(213, 63, 140, 0.1));
+            backdrop-filter: blur(5px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(107, 70, 193, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: slideUp 0.8s ease-out forwards;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            width: 100%;
+        }
+        .footer-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            width: 100%;
+            max-width: 100%;
+        }
+        .footer-content::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: -20%;
+            width: 20%;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(107, 70, 193, 0.6), rgba(213, 63, 140, 0.6));
+            box-shadow: 0 0 5px rgba(107, 70, 193, 0.3);
+            animation: lineFlow 3s infinite linear, linePulse 2s infinite;
+            z-index: 1;
+        }
+        .footer:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(107, 70, 193, 0.2);
+        }
+        .footer-text {
+            background: linear-gradient(90deg, #6B46C1, #D53F8C);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+        .footer-text:hover {
+            transform: scale(1.05);
+            text-shadow: 0 2px 6px rgba(107, 70, 193, 0.4);
+        }
+        .footer i {
+            background: linear-gradient(90deg, #6B46C1, #D53F8C);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 1.2rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .footer i:hover {
+            transform: scale(1.1);
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .footer:hover .tooltip {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-purple-500 to-indigo-600 min-h-screen flex items-center justify-content">
+    <div class="container bg-white p-8 rounded-2xl shadow-2xl">
+        <h1 class="text-4xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 pulse">
+            🚀 Image to WebP Converter
+        </h1>
+        <div id="counter" class="text-center text-gray-600 font-medium">Uploaded: 0 | Converted: 0/0</div>
+        <div id="zipDownload" class="hidden">
+            <a href="#" id="zipDownloadLink" class="text-indigo-600 hover:text-indigo-800 font-medium">Download All (ZIP)</a>
+        </div>
+        <div id="dropzone" class="border-2 border-dashed border-indigo-300 p-8 text-center rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer">
+            <p class="text-lg font-medium text-indigo-700">🎉 Drag & drop images here or click to upload</p>
+            <p class="text-sm text-gray-500 mt-2">Note: Conversion may take a few seconds for larger images.</p>
+            <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+        </div>
+        <div id="fileList" class="mt-6 max-h-60 overflow-y-auto"></div>
+        <div class="footer" data-tilt data-tilt-max="5" data-tilt-speed="400">
+            <div class="footer-content">
+                <i class="fas fa-code"></i>
+                <span class="footer-text">Developed by Abdullah Zafar</span>
+            </div>
+            <div class="tooltip">Crafted with ❤️ by Abdullah Zafar</div>
+        </div>
+    </div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const zipDownload = document.getElementById('zipDownload');
+        const zipDownloadLink = document.getElementById('zipDownloadLink');
+        const counter = document.getElementById('counter');
+        let files = [];
+        let filePreviews = new Map();
+        let fileProgress = new Map();
+        const sessionId = `session_${Date.now()}`; // Single session ID for page lifetime
+        let sessionZipUrl = '';
+
+        function formatFileSize(bytes) {
+            if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return bytes + ' B';
+        }
+
+        function updateCounter() {
+            const totalFiles = files.length;
+            const convertedFiles = files.filter(f => f.convertedInfo).length;
+            counter.textContent = `Uploaded: ${totalFiles} | Converted: ${convertedFiles}/${totalFiles}`;
+        }
+
+        function updateFileList() {
+            fileList.innerHTML = files.map((file, index) => {
+                const progress = fileProgress.get(file.name) || 0;
+                const convertedInfo = file.convertedInfo || {};
+                let sizeMessage = '';
+                if (progress === 100) {
+                    if (convertedInfo.convertedSize) {
+                        if (convertedInfo.convertedSize < 512) {
+                            sizeMessage = `<p class="error-message">Error: Conversion failed (file too small: ${formatFileSize(convertedInfo.convertedSize)})</p>`;
+                        } else if (convertedInfo.skipped) {
+                            sizeMessage = `<p class="success-message">No reduction: ${formatFileSize(convertedInfo.convertedSize)} (0%)</p>`;
+                        } else {
+                            const reduction = convertedInfo.originalSize - convertedInfo.convertedSize;
+                            const percentage = (reduction / convertedInfo.originalSize) * 100;
+                            const formattedPercentage = percentage.toFixed(2);
+                            sizeMessage = percentage > 0 
+                                ? `<p class="success-message">Reduction: ${formatFileSize(convertedInfo.convertedSize)} (${formattedPercentage}%)</p>`
+                                : `<p class="error-message">No Change or Increase: ${formatFileSize(convertedInfo.convertedSize)} (${Math.abs(formattedPercentage)}%)</p>`;
+                        }
+                    } else if (convertedInfo.error) {
+                        sizeMessage = `<p class="error-message">Error: ${convertedInfo.errorDetail || 'Unknown error'}</p>`;
+                    }
+                }
+                const previewUrl = filePreviews.get(file.name) || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+                return `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <img src="${previewUrl}" alt="${file.name}" class="w-12 h-12 object-cover rounded-md" onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='">
+                            <div class="file-details">
+                                <p class="text-sm text-indigo-700">${file.name} (${formatFileSize(file.size)})</p>
+                                ${progress < 100 ? `
+                                    <div class="file-progress">
+                                        <div class="file-progress-bar" style="width: ${progress}%"></div>
+                                    </div>
+                                ` : ''}
+                                ${sizeMessage}
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            ${progress === 100 && convertedInfo.downloadUrl && !convertedInfo.error && !convertedInfo.skipped ? `
+                                <a href="${convertedInfo.downloadUrl}" class="action-btn btn-converted">
+                                    <i class="fas fa-download"></i> Download Converted
+                                </a>
+                            ` : ''}
+                            <button class="action-btn btn-delete" onclick="removeFile(${index})">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            updateCounter();
+            zipDownloadLink.href = sessionZipUrl || '#';
+            zipDownload.classList.toggle('hidden', !sessionZipUrl);
+        }
+
+        function removeFile(index) {
+            const file = files[index];
+            if (file) {
+                URL.revokeObjectURL(filePreviews.get(file.name));
+                filePreviews.delete(file.name);
+                fileProgress.delete(file.name);
+            }
+            files.splice(index, 1);
+            updateFileList();
+        }
+
+        async function convertFiles() {
+            const filesToConvert = files.filter(f => !f.convertedInfo);
+            if (filesToConvert.length === 0) return;
+
+            filesToConvert.forEach(file => fileProgress.set(file.name, 1));
+            updateFileList();
+
+            const formData = new FormData();
+            filesToConvert.forEach((file) => formData.append('image', file));
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    headers: { 'X-Session-ID': sessionId }, // Send session ID
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const reader = response.body.getReader();
+                    let receivedLength = 0;
+                    const chunks = [];
+                    const totalSize = parseInt(response.headers.get('Content-Length')) || 0;
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunks.push(value);
+                        receivedLength += value.length;
+
+                        const overallProgress = totalSize ? (receivedLength / totalSize) * 100 : 50;
+                        filesToConvert.forEach(file => {
+                            fileProgress.set(file.name, Math.min(overallProgress, 100));
+                        });
+                        updateFileList();
+                    }
+
+                    const blob = new Blob(chunks);
+                    const text = await blob.text();
+                    console.log('Raw response:', text);
+                    const { downloadUrls, zipDownloadUrl, fileSizes } = JSON.parse(text);
+
+                    filesToConvert.forEach((file, idx) => {
+                        const matchingFileSize = fileSizes.find(fs => fs.originalName === file.name);
+                        if (matchingFileSize) {
+                            fileProgress.set(file.name, 100);
+                            file.convertedInfo = {
+                                convertedSize: matchingFileSize.convertedSize,
+                                downloadUrl: downloadUrls[idx],
+                                originalSize: matchingFileSize.originalSize,
+                                error: matchingFileSize.error,
+                                errorDetail: matchingFileSize.errorDetail,
+                                skipped: matchingFileSize.skipped || false
+                            };
+                        } else {
+                            fileProgress.set(file.name, 100);
+                            file.convertedInfo = { error: true, errorDetail: 'No matching file data from server' };
+                        }
+                    });
+                    sessionZipUrl = zipDownloadUrl;
+                    updateFileList();
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    filesToConvert.forEach(file => {
+                        fileProgress.set(file.name, 100);
+                        file.convertedInfo = { error: true, errorDetail: errorText || 'Server error' };
+                    });
+                    updateFileList();
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                filesToConvert.forEach(file => {
+                    fileProgress.set(file.name, 100);
+                    file.convertedInfo = { error: true, errorDetail: err.message || 'Network error' };
+                });
+                updateFileList();
+            }
+        }
+
+        function handleFiles(selectedFiles) {
+            const newFiles = Array.from(selectedFiles);
+            const newPreviews = newFiles.map(file => {
+                const url = URL.createObjectURL(file);
+                filePreviews.set(file.name, url);
+                return url;
+            });
+            files = [...files, ...newFiles];
+            fileProgress.set(newFiles[0]?.name, 0);
+            updateFileList();
+            convertFiles();
+        }
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('bg-indigo-100');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('bg-indigo-100'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('bg-indigo-100');
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => {
+            handleFiles(fileInput.files);
+            fileInput.value = '';
+        });
+
+        VanillaTilt.init(document.querySelectorAll(".footer"), {
+            max: 5,
+            speed: 400,
+            glare: false
+        });
+    </script>
+</body>
+</html>
